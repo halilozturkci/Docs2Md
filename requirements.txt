@@ -1,0 +1,6 @@
+markdown2>=2.4.10
+click>=8.1.7
+pathlib>=1.0.1
+PyYAML>=6.0.1
+python-frontmatter>=1.0.0
+rich>=13.7.0 
