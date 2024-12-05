@@ -12,9 +12,10 @@ class Converter:
         """Initialize Converter with input directory and output file path.
         
         Args:
-            input_dir (str): Path to the directory containing MDX files
+            input_dir (str): Path to the directory containing MDX/MD files
             output_file (str): Path where the output MD file will be saved
         """
+        self.input_dir = Path(input_dir)
         self.file_handler = FileHandler(input_dir)
         self.output_file = Path(output_file)
         self.toc_entries = []
@@ -41,14 +42,14 @@ class Converter:
                 # If path starts with '/', treat it as relative to input directory
                 if image_path.startswith('/'):
                     image_path = image_path.lstrip('/')
-                    abs_image_path = (self.file_handler.input_dir / image_path).resolve()
+                    abs_image_path = (self.input_dir / image_path).resolve()
                 else:
                     # Otherwise, treat it as relative to the MDX file's location
                     abs_image_path = (file_path.parent / image_path).resolve()
                 
                 # Get the relative path from input directory
                 try:
-                    rel_path = abs_image_path.relative_to(self.file_handler.input_dir)
+                    rel_path = abs_image_path.relative_to(self.input_dir)
                     return f'![{alt_text}]({rel_path})'
                 except ValueError:
                     # If the image is outside the input directory, keep the original path
@@ -63,25 +64,27 @@ class Converter:
         content = re.sub(r'!\[(.*?)\]\((.*?)\)', replace_image_path, content)
         return content
 
-    def _process_content(self, content: str, file_path: Path) -> str:
-        """Process the MDX content to convert it to MD format.
+    def _process_content(self, content: str, file_path: Path, base_level: int = 1) -> str:
+        """Process the MDX content to convert it to MD format."""
+        # Calculate heading level based on directory depth
+        rel_path = file_path.relative_to(self.input_dir)
+        depth = len(rel_path.parts)
+        heading_level = base_level + depth - 1
         
-        Args:
-            content (str): The MDX content
-            file_path (Path): Path to the current MDX file
-            
-        Returns:
-            str: Processed content in MD format
-        """
-        # Add file path as heading
-        heading = self.file_handler.create_heading_from_path(file_path)
-        self.toc_entries.append((heading.count('#'), heading.lstrip('#').strip()))
+        # Create heading from file path
+        heading = f"{'#' * heading_level} {rel_path}"
+        self.toc_entries.append((heading_level, str(rel_path)))
+        
+        # Add directory structure information
+        dir_structure = ""
+        if depth > 1:
+            dir_structure = "Directory path: " + " / ".join(rel_path.parts[:-1]) + "\n\n"
         
         # Adjust image paths
         content = self._adjust_image_paths(content, file_path)
         
-        # Add heading and content with proper spacing
-        return f"{heading}\n\n{content}\n\n"
+        # Combine everything
+        return f"{heading}\n\n{dir_structure}{content}\n\n"
 
     def _generate_toc(self) -> str:
         """Generate table of contents from collected entries.
@@ -97,16 +100,16 @@ class Converter:
         return toc + "\n"
 
     def convert(self) -> None:
-        """Convert all MDX files to a single MD file."""
+        """Convert all MDX/MD files to a single MD file."""
         try:
-            mdx_files = self.file_handler.find_mdx_files()
+            markdown_files = self.file_handler.find_markdown_files()
             
             with open(self.output_file, 'w', encoding='utf-8') as out_file:
-                # Process each MDX file
+                # Process each Markdown file
                 content_blocks = []
-                for file_path in mdx_files:
+                for file_path in markdown_files:
                     logger.info(f"Processing {file_path}")
-                    metadata, content = self.file_handler.read_mdx_file(file_path)
+                    metadata, content = self.file_handler.read_markdown_file(file_path)
                     processed_content = self._process_content(content, file_path)
                     content_blocks.append(processed_content)
                 

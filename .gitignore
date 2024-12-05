@@ -42,4 +42,10 @@ ENV/
 output.md
 *.log
 .coverage
-htmlcov/ 
+htmlcov/
+temp/ 
+
+# Environment variables
+.env
+.env.*
+!.env.example 

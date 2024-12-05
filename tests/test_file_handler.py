@@ -17,18 +17,20 @@ def test_file_handler_invalid_dir():
     with pytest.raises(ValueError):
         FileHandler("/nonexistent/directory")
 
-def test_find_mdx_files(temp_dir):
+def test_find_markdown_files(temp_dir):
     # Create some test files
     (Path(temp_dir) / "test1.mdx").touch()
-    (Path(temp_dir) / "test2.txt").touch()
+    (Path(temp_dir) / "test2.md").touch()
+    (Path(temp_dir) / "test3.txt").touch()
     os.makedirs(Path(temp_dir) / "subdir")
-    (Path(temp_dir) / "subdir" / "test3.mdx").touch()
+    (Path(temp_dir) / "subdir" / "test4.mdx").touch()
+    (Path(temp_dir) / "subdir" / "test5.md").touch()
     
     handler = FileHandler(temp_dir)
-    files = handler.find_mdx_files()
+    files = handler.find_markdown_files()
     
-    assert len(files) == 2
-    assert all(f.suffix == '.mdx' for f in files)
+    assert len(files) == 4  # Should find both .md and .mdx files
+    assert all(f.suffix in ['.md', '.mdx'] for f in files)
 
 def test_create_heading_from_path(temp_dir):
     file_path = Path(temp_dir) / "dir1" / "dir2" / "test.mdx"
