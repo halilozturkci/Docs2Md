@@ -51,6 +51,20 @@ This tool is specifically engineered to transform documentation from multiple MD
 - PyYAML>=6.0.1
 - python-frontmatter>=1.0.0
 - rich>=13.7.0
+- PyGithub>=2.1.1  # GitHub API integration
+- requests>=2.31.0 # HTTP requests for GitHub API
+
+### GitHub Authentication
+To use the GitHub integration features, you need to:
+1. Create a GitHub Personal Access Token (PAT)
+2. Set it as an environment variable:
+   ```bash
+   export GITHUB_TOKEN=your_token_here
+   ```
+   or provide it via the command line:
+   ```bash
+   python main.py --github-token your_token_here --github-repo <repository_url> --output-file <output.md>
+   ```
 
 ## 💻 Installation
 
@@ -106,9 +120,12 @@ logging.basicConfig(
 ```
 
 ### GitHub Integration
-- Supports both public and private repositories
+- Supports both public and private repositories (requires appropriate GitHub PAT permissions)
 - Handles repository cloning and cleanup
 - Maintains directory structure integrity
+- Rate limit aware with automatic handling
+- Supports organization repositories
+- Requires GitHub Personal Access Token for private repositories
 
 ## ⚙️ Core Components
 
