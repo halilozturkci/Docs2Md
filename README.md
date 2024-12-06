@@ -1,4 +1,4 @@
-# MDX to MD Documentation Converter v2.0
+# Docs to MD Documentation Converter v2.0
 
 A powerful Python utility designed to transform and consolidate MDX documentation files into a single, well-structured Markdown file, with enhanced GitHub integration and interactive features.
 
