@@ -4,12 +4,7 @@ import logging
 import sys
 import os
 from rich.logging import RichHandler
-
-# Add the project root directory to Python path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from src.converter import Converter
-from src.github_handler import GitHubHandler
+from docs2md.converter import Converter
 
 # Configure logging with rich handler
 logging.basicConfig(
@@ -20,20 +15,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-@click.command()
+@click.group()
+def cli():
+    """Documentation converter tool."""
+    pass
+
+@cli.command()
 @click.option(
-    '--github-repo',
+    '--url',
     required=True,
-    help='GitHub repository URL'
-)
-@click.option(
-    '--interactive/--no-interactive',
-    default=True,
-    help='Enable/disable interactive directory selection'
-)
-@click.option(
-    '--dirs',
-    help='Comma-separated list of directories to process'
+    help='URL to convert'
 )
 @click.option(
     '--output-file',
@@ -41,35 +32,52 @@ logger = logging.getLogger(__name__)
     type=click.Path(file_okay=True, dir_okay=False),
     help='Path for the output MD file'
 )
-def main(github_repo: str, interactive: bool, dirs: str, output_file: str):
-    """Convert MDX documentation files to a single MD file."""
+@click.option(
+    '--max-depth',
+    default=5,
+    type=int,
+    help='Maximum depth for crawling links'
+)
+@click.option(
+    '--excluded-types',
+    default='.pdf,.zip,.exe,.dmg',
+    help='Comma-separated list of file extensions to exclude'
+)
+@click.option(
+    '--max-workers',
+    default=4,
+    type=int,
+    help='Number of parallel workers'
+)
+@click.option(
+    '--follow-paths',
+    help='Comma-separated list of paths to follow (e.g. /docs,/api)'
+)
+@click.option(
+    '--show-progress/--no-progress',
+    default=True,
+    help='Show progress bars'
+)
+def url_convert(url: str, output_file: str, max_depth: int, excluded_types: str, 
+                max_workers: int, follow_paths: str, show_progress: bool):
+    """Convert documentation from URL to markdown."""
     try:
-        handler = GitHubHandler(github_repo)
-        try:
-            structure = handler.get_repository_structure()
-            
-            if interactive:
-                selected_dirs = handler.show_interactive_selection(structure)
-            else:
-                selected_dirs = dirs.split(',') if dirs else []
-            
-            if not selected_dirs:
-                raise click.ClickException("No directories selected for processing")
-            
-            temp_dir = handler.download_directories(selected_dirs)
-            
-            # Process the downloaded files
-            converter = Converter(temp_dir, output_file)
-            converter.convert()
-            
-        finally:
-            handler.cleanup()
-            
-        logger.info("Conversion completed successfully")
+        converter = Converter(
+            input_dir="temp",  # Geçici dizin
+            output_file=output_file,
+            max_depth=max_depth,
+            excluded_types=set(excluded_types.split(',')),
+            max_workers=max_workers,
+            follow_paths=follow_paths.split(',') if follow_paths else None,
+            show_progress=show_progress
+        )
+        
+        converter.convert_url_to_markdown(url)
+        logger.info("URL conversion completed successfully")
         
     except Exception as e:
-        logger.error(f"Conversion failed: {str(e)}")
+        logger.error(f"URL conversion failed: {str(e)}")
         raise click.ClickException(str(e))
 
 if __name__ == '__main__':
-    main() 
+    cli() 
